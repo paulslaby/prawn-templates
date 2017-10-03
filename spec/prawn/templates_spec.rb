@@ -523,4 +523,15 @@ describe Prawn::Templates do
       expect(pdf.page_count).to eq 2
     end
   end
+
+  describe 'PDFs printed by Google Chrome' do
+    it 'adds text with the correct matrix' do
+      filename = "#{DATADIR}/pdfs/google_chrome_print.pdf"
+      pdf = Prawn::Document.new(template: filename)
+      pdf.text 'Adding some text'
+      text = PDF::Inspector::Text.analyze(pdf.render)
+      # If PDF is mirrored, then this string will be at the end.
+      expect(text.strings.first).to eq 'Adding some text'
+    end
+  end
 end
