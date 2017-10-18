@@ -22,21 +22,32 @@ module PDF
         end
       end
 
+      # If :Contents is a reference to an array, returns the resolved reference.
+      # Otherwise, makes sure :Contents is an array.
+      def ensure_contents_array
+        contents = dictionary.data[:Contents]
+        if contents.is_a?(PDF::Core::Reference) && contents.data.is_a?(Array)
+          return contents.data
+        end
+        # Ensure contents is an array.
+        dictionary.data[:Contents] = Array(contents)
+      end
+
       # Prepend a content stream containing 'q',
       # and append a content stream containing 'Q'.
       # This ensures that prawn has a pristine graphics state
       # before it starts adding content.
       def wrap_graphics_state
-        dictionary.data[:Contents] = Array(dictionary.data[:Contents])
+        contents = ensure_contents_array
 
         # Save graphics context
         @content = document.ref({})
-        dictionary.data[:Contents].unshift(document.state.store[@content])
+        contents.unshift(document.state.store[@content])
         document.add_content 'q'
 
         # Restore graphics context
         @content = document.ref({})
-        dictionary.data[:Contents] << document.state.store[@content]
+        contents << document.state.store[@content]
         document.add_content 'Q'
       end
 
@@ -47,9 +58,9 @@ module PDF
       def new_content_stream
         return if in_stamp_stream?
 
-        dictionary.data[:Contents] = Array(dictionary.data[:Contents])
         @content = document.ref({})
-        dictionary.data[:Contents] << document.state.store[@content]
+        contents = ensure_contents_array
+        contents << document.state.store[@content]
         document.open_graphics_state
       end
 
